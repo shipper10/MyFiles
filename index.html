@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المحتويات</title>
+    <meta name="color-scheme" content="dark light">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23C84B31' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z'/%3E%3C/svg%3E">
+
+    <!-- تطبيق المظهر قبل الرسم لتجنب الوميض: الوضع الليلي هو الافتراضي -->
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('theme') === 'light') {
+                    document.documentElement.classList.remove('dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
+
+    <!-- ملف التنسيق المبني محلياً (Tailwind) + الخطوط المحلية: يعمل بدون إنترنت -->
+    <link rel="stylesheet" href="./assets/style.css">
+</head>
+<body class="bg-paper-bg text-paper-ink dark:bg-charcoal-bg dark:text-charcoal-ink min-h-screen flex flex-col transition-colors duration-150">
+
+    <!-- طبقتا الخلفية (صورة + تعتيم) -->
+    <div id="siteBg" aria-hidden="true"></div>
+    <div id="siteBgOverlay" aria-hidden="true"></div>
+
+    <!-- الشريط العلوي -->
+    <header class="sticky top-0 z-30 bg-paper-surface/95 dark:bg-charcoal-surface/95 backdrop-blur-sm border-b border-paper-border dark:border-charcoal-border">
+        <div class="max-w-[1440px] mx-auto px-3 sm:px-6 py-3">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5 select-none">
+                    <div class="w-9 h-9 rounded-lg bg-paper-ink dark:bg-charcoal-ink text-paper-surface dark:text-charcoal-bg flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-base sm:text-lg font-bold tracking-tight leading-tight">المحتويات</h1>
+                        <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-paper-muted dark:text-charcoal-muted mt-0.5">
+                            <span id="globalTotalSize" class="mono-ltr font-semibold text-accent">0 B</span>
+                            <span>•</span>
+                            <span id="globalCounts">0 مجلدات، 0 ملفات</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-1.5 sm:gap-2">
+                    <div class="relative">
+                        <select id="sortSelect" aria-label="ترتيب المحتويات" class="appearance-none cursor-pointer pl-7 pr-2.5 py-1.5 text-xs font-medium rounded-lg border border-paper-border dark:border-charcoal-border bg-paper-bg dark:bg-charcoal-bg text-paper-ink dark:text-charcoal-ink focus:outline-none focus:border-accent">
+                            <option value="name_asc">الاسم (أ - ي)</option>
+                            <option value="name_desc">الاسم (ي - أ)</option>
+                            <option value="size_desc">الحجم (الأكبر)</option>
+                            <option value="size_asc">الحجم (الأصغر)</option>
+                            <option value="date_desc">الأحدث</option>
+                            <option value="date_asc">الأقدم</option>
+                        </select>
+                        <svg class="w-3.5 h-3.5 text-paper-muted pointer-events-none absolute left-2 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
+
+                    <div class="inline-flex rounded-lg border border-paper-border dark:border-charcoal-border bg-paper-bg dark:bg-charcoal-bg p-0.5">
+                        <button id="btnViewList" aria-label="عرض قائمة" class="p-1.5 rounded-md transition-colors bg-paper-surface dark:bg-charcoal-surface text-accent">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                            </svg>
+                        </button>
+                        <button id="btnViewGrid" aria-label="عرض شبكة" class="p-1.5 rounded-md transition-colors text-paper-muted dark:text-charcoal-muted hover:text-paper-ink dark:hover:text-charcoal-ink">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- إعدادات الخلفية -->
+                    <button id="bgBtn" aria-label="خلفية الموقع" title="خلفية الموقع" class="p-1.5 rounded-lg border border-paper-border dark:border-charcoal-border bg-paper-bg dark:bg-charcoal-bg hover:border-accent transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </button>
+
+                    <!-- تبديل الوضع الليلي / النهاري -->
+                    <button id="themeToggle" aria-label="تبديل المظهر" class="p-1.5 rounded-lg border border-paper-border dark:border-charcoal-border bg-paper-bg dark:bg-charcoal-bg hover:border-accent transition-colors">
+                        <svg class="w-4 h-4 hidden dark:block text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        <svg class="w-4 h-4 block dark:hidden text-paper-ink" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- البحث وفلاتر النوع -->
+            <div class="mt-3 flex flex-col md:flex-row items-stretch md:items-center gap-2.5">
+                <div class="relative flex-1 max-w-xl">
+                    <svg class="w-4 h-4 text-paper-muted dark:text-charcoal-muted absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <input type="text" id="searchInput" dir="auto" placeholder="ابحث بأي جزء من الاسم أو الكلمات..." class="w-full pr-9 pl-8 py-1.5 text-sm rounded-lg border border-paper-border dark:border-charcoal-border bg-paper-bg dark:bg-charcoal-bg placeholder-paper-muted/70 dark:placeholder-charcoal-muted/70 focus:outline-none focus:border-accent transition-colors">
+                    <button id="clearSearchBtn" aria-label="مسح البحث" class="hidden absolute left-2.5 top-1/2 -translate-y-1/2 text-paper-muted hover:text-paper-ink dark:hover:text-charcoal-ink">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div id="filterPills" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 md:pb-0">
+                    <button data-filter="all" class="filter-pill active px-3 py-1 text-xs font-medium rounded-lg border transition-colors shrink-0 bg-paper-ink text-paper-surface border-paper-ink dark:bg-charcoal-ink dark:text-charcoal-bg dark:border-charcoal-ink">
+                        الكل <span class="pill-count mono-ltr opacity-60 ms-1" data-count="all"></span>
+                    </button>
+                    <button data-filter="folder" class="filter-pill px-3 py-1 text-xs font-medium rounded-lg border border-paper-border dark:border-charcoal-border bg-paper-bg dark:bg-charcoal-bg text-paper-muted dark:text-charcoal-muted hover:text-paper-ink dark:hover:text-charcoal-ink transition-colors shrink-0">
+                        المجلدات <span class="pill-count mono-ltr opacity-60 ms-1" data-count="folder"></span>
+                    </button>
+                    <button data-filter="video" class="filter-pill px-3 py-1 text-xs font-medium rounded-lg border border-paper-border dark:border-charcoal-border bg-paper-bg dark:bg-charcoal-bg text-paper-muted dark:text-charcoal-muted hover:text-paper-ink dark:hover:text-charcoal-ink transition-colors shrink-0">
+                        فيديو <span class="pill-count mono-ltr opacity-60 ms-1" data-count="video"></span>
+                    </button>
+                    <button data-filter="doc" class="filter-pill px-3 py-1 text-xs font-medium rounded-lg border border-paper-border dark:border-charcoal-border bg-paper-bg dark:bg-charcoal-bg text-paper-muted dark:text-charcoal-muted hover:text-paper-ink dark:hover:text-charcoal-ink transition-colors shrink-0">
+                        مستندات <span class="pill-count mono-ltr opacity-60 ms-1" data-count="doc"></span>
+                    </button>
+                    <button data-filter="audio" class="filter-pill px-3 py-1 text-xs font-medium rounded-lg border border-paper-border dark:border-charcoal-border bg-paper-bg dark:bg-charcoal-bg text-paper-muted dark:text-charcoal-muted hover:text-paper-ink dark:hover:text-charcoal-ink transition-colors shrink-0">
+                        صوتيات <span class="pill-count mono-ltr opacity-60 ms-1" data-count="audio"></span>
+                    </button>
+                    <button data-filter="archive" class="filter-pill px-3 py-1 text-xs font-medium rounded-lg border border-paper-border dark:border-charcoal-border bg-paper-bg dark:bg-charcoal-bg text-paper-muted dark:text-charcoal-muted hover:text-paper-ink dark:hover:text-charcoal-ink transition-colors shrink-0">
+                        برامج ومضغوط <span class="pill-count mono-ltr opacity-60 ms-1" data-count="archive"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- مساحة العمل -->
+    <div class="flex-1 max-w-[1440px] w-full mx-auto flex">
+
+        <aside class="hidden lg:flex flex-col w-72 xl:w-80 shrink-0 border-l border-paper-border dark:border-charcoal-border bg-paper-surface/50 dark:bg-charcoal-surface/40 lg:sticky lg:top-[7.5rem] lg:self-start lg:max-h-[calc(100vh-8rem)]">
+            <div class="px-4 py-2.5 border-b border-paper-border dark:border-charcoal-border flex items-center justify-between">
+                <span class="text-xs font-semibold text-paper-muted dark:text-charcoal-muted">المجلدات</span>
+                <span id="treeFolderTotal" class="text-[11px] text-paper-muted dark:text-charcoal-muted"></span>
+            </div>
+            <div id="folderTreeContainer" class="flex-1 overflow-y-auto p-2 space-y-0.5 text-sm"></div>
+        </aside>
+
+        <main class="flex-1 flex flex-col min-w-0 bg-paper-bg dark:bg-charcoal-bg">
+
+            <div class="px-3 sm:px-6 py-2.5 bg-paper-surface dark:bg-charcoal-surface border-b border-paper-border dark:border-charcoal-border flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2 min-w-0 flex-1">
+                    <button id="btnBack" disabled aria-label="رجوع" class="p-1.5 rounded-lg border border-paper-border dark:border-charcoal-border bg-paper-bg dark:bg-charcoal-bg disabled:opacity-40 disabled:pointer-events-none hover:border-accent transition-colors shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+                    <nav id="breadcrumbs" aria-label="المسار" class="flex flex-wrap items-center gap-1 text-xs sm:text-sm py-0.5"></nav>
+                </div>
+
+                <div class="flex items-center gap-2 text-xs text-paper-muted dark:text-charcoal-muted shrink-0">
+                    <span id="currentViewCount">0 عناصر</span>
+                    <span>•</span>
+                    <span id="currentViewSize" class="mono-ltr font-semibold text-paper-ink dark:text-charcoal-ink">0 B</span>
+                </div>
+            </div>
+
+            <div id="listHeader" class="hidden sm:grid grid-cols-12 gap-3 px-6 py-2 text-[11px] font-semibold text-paper-muted dark:text-charcoal-muted border-b border-paper-border dark:border-charcoal-border bg-paper-subtle/60 dark:bg-charcoal-subtle/40 select-none">
+                <button onclick="toggleHeaderSort('name')" class="col-span-6 flex items-center gap-1 text-right hover:text-paper-ink dark:hover:text-charcoal-ink cursor-pointer">
+                    <span>الاسم</span>
+                    <span id="sortIndName" class="text-accent">↑</span>
+                </button>
+                <div class="col-span-2">النوع</div>
+                <button onclick="toggleHeaderSort('date')" class="col-span-2 flex items-center gap-1 text-right hover:text-paper-ink dark:hover:text-charcoal-ink cursor-pointer">
+                    <span>التاريخ</span>
+                    <span id="sortIndDate" class="text-accent"></span>
+                </button>
+                <button onclick="toggleHeaderSort('size')" class="col-span-2 flex items-center justify-end gap-1 text-left hover:text-paper-ink dark:hover:text-charcoal-ink cursor-pointer">
+                    <span id="sortIndSize" class="text-accent"></span>
+                    <span>الحجم</span>
+                </button>
+            </div>
+
+            <div id="itemsContainer" class="flex-1 overflow-y-auto p-3 sm:p-5">
+                <div class="h-56 flex items-center justify-center text-sm text-paper-muted dark:text-charcoal-muted">جارٍ التحميل...</div>
+            </div>
+        </main>
+    </div>
+
+    <!-- نافذة إعدادات الخلفية -->
+    <div id="bgModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="w-full max-w-sm rounded-2xl bg-paper-surface dark:bg-charcoal-surface border border-paper-border dark:border-charcoal-border p-5 shadow-xl">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-sm font-bold">خلفية الموقع</h2>
+                <button id="bgClose" aria-label="إغلاق" class="p-1 rounded-lg text-paper-muted hover:text-paper-ink dark:hover:text-charcoal-ink">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex flex-wrap gap-2">
+                    <label for="bgFileInput" class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-accent hover:bg-accent-hover text-white transition-colors">
+                        اختيار صورة من جهازك
+                    </label>
+                    <input type="file" id="bgFileInput" accept="image/*" class="hidden">
+                    <button id="bgNone" class="px-3 py-1.5 text-xs rounded-lg border border-paper-border dark:border-charcoal-border hover:border-accent">بدون خلفية</button>
+                    <button id="bgDefault" class="px-3 py-1.5 text-xs rounded-lg border border-paper-border dark:border-charcoal-border hover:border-accent">الافتراضية</button>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between text-xs mb-1.5">
+                        <label for="bgOverlay">قوة التعتيم</label>
+                        <span id="bgOverlayVal" class="mono-ltr text-paper-muted dark:text-charcoal-muted"></span>
+                    </div>
+                    <input type="range" id="bgOverlay" min="0.2" max="0.95" step="0.05" class="w-full accent-[#C84B31]">
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between text-xs mb-1.5">
+                        <label for="bgBlur">تغبيش الأسطح</label>
+                        <span id="bgBlurVal" class="mono-ltr text-paper-muted dark:text-charcoal-muted"></span>
+                    </div>
+                    <input type="range" id="bgBlur" min="0" max="16" step="1" class="w-full accent-[#C84B31]">
+                </div>
+
+                <p class="text-[11px] leading-relaxed text-paper-muted dark:text-charcoal-muted">
+                    الصورة التي تختارها تُحفظ في متصفحك أنت فقط. لوضع خلفية لكل الزوار ضع الصورة في المستودع وحدّد اسمها في ملف <span class="mono-ltr">site.json</span>.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- إشعار منبثق -->
+    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-200 translate-y-2">
+        <div class="bg-paper-ink dark:bg-charcoal-ink text-paper-surface dark:text-charcoal-bg px-4 py-2 rounded-xl shadow-lg text-xs sm:text-sm font-medium border border-white/10">
+            <span id="toastMessage"></span>
+        </div>
+    </div>
+
+    <script>
+        /* =====================================================
+         * 1. الحالة
+         * ===================================================== */
+        const RENDER_STEP = 200;
+
+        const state = {
+            rootData: [],
+            flat: [],
+            currentPath: [],
+            searchQuery: "",
+            searchTokens: [],
+            activeFilter: "all",
+            sortBy: "name_asc",
+            viewMode: "list",
+            expandedTreePaths: new Set(),
+            totalStats: { size: 0, folders: 0, files: 0 },
+            limit: RENDER_STEP
+        };
+
+        let nodeRegistry = new Map();
+        let nodeCounter = 0;
+
+        /* =====================================================
+         * 2. تصريف الأعداد في العربية
+         * ===================================================== */
+        function formatArabicCount(n, forms) {
+            const num = Math.abs(Math.floor(n || 0));
+            if (num === 0) return forms.zero;
+            if (num === 1) return forms.one;
+            if (num === 2) return forms.two;
+            const mod100 = num % 100;
+            if (mod100 >= 3 && mod100 <= 10) return `${num} ${forms.plural}`;
+            if (mod100 >= 11 && mod100 <= 99) return `${num} ${forms.accusative}`;
+            return `${num} ${forms.genitive}`;
+        }
+
+        const ITEM_FORMS   = { zero: "لا توجد عناصر", one: "عنصر واحد", two: "عنصران", plural: "عناصر", accusative: "عنصراً", genitive: "عنصر" };
+        const FOLDER_FORMS = { zero: "0 مجلدات",     one: "مجلد واحد", two: "مجلدان", plural: "مجلدات", accusative: "مجلداً", genitive: "مجلد" };
+        const FILE_FORMS   = { zero: "0 ملفات",      one: "ملف واحد",  two: "ملفان",  plural: "ملفات",  accusative: "ملفاً",  genitive: "ملف" };
+
+        /* =====================================================
+         * 3. البحث العربي المتسامح
+         * ===================================================== */
+        function normalizeArabicText(str) {
+            if (!str) return "";
+            return String(str)
+                .normalize('NFC')
+                .toLowerCase()
+                .replace(/[ً-ٰٟـ]/g, "")
+                .replace(/[أإآٱ]/g, "ا")
+                .replace(/ة/g, "ه")
+                .replace(/ى/g, "ي")
+                .replace(/ؤ/g, "و")
+                .replace(/ئ/g, "ي")
+                .replace(/[_\-\.\(\)\[\]\/\\]+/g, " ")
+                .replace(/\s+/g, " ")
+                .trim();
+        }
+
+        function matchesSmartSearch(item) {
+            const tokens = state.searchTokens;
+            if (tokens.length === 0) return true;
+            // الأسماء والمسارات مطبَّعة مسبقاً أثناء بناء الشجرة (أداء أفضل)
+            return tokens.every(t => item._nn.includes(t) || item._np.includes(t));
+        }
+
+        function escapeHTML(str) {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        /* تمييز الكلمات المطابقة على النص الخام (ثم الهروب) لتفادي كسر الكيانات */
+        function buildHighlightRegex(query) {
+            if (!query || !query.trim()) return null;
+            const rawTokens = query.trim().split(/[\s_\-\.]+/).filter(Boolean)
+                .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+            if (!rawTokens.length) return null;
+            const pattern = rawTokens.map(t => t
+                .replace(/[اأإآ]/g, '[اأإآ]')
+                .replace(/[ةه]/g, '[ةه]')
+                .replace(/[يى]/g, '[يى]')).join('|');
+            try { return new RegExp(`(${pattern})`, 'gi'); } catch (e) { return null; }
+        }
+
+        function highlightText(text, regex) {
+            if (!regex) return escapeHTML(text);
+            let out = '', last = 0, m;
+            regex.lastIndex = 0;
+            while ((m = regex.exec(text)) !== null) {
+                if (m[0] === '') { regex.lastIndex++; continue; }
+                out += escapeHTML(text.slice(last, m.index));
+                out += `<mark class="search-hl">${escapeHTML(m[0])}</mark>`;
+                last = m.index + m[0].length;
+            }
+            return out + escapeHTML(text.slice(last));
+        }
+
+        /* =====================================================
+         * 4. عرض الأسماء بدون لخبطة الاتجاه (Bidi)
+         *    - كل مقطع لاتيني/رقمي يُعزل داخل <bdi dir="ltr">
+         *    - الامتداد يُعرض في عنصر LTR مستقل
+         *    - الشرطة السفلية تُعرض كمسافة لتحسين القراءة والالتفاف
+         * ===================================================== */
+        const LATIN_RUN = /([A-Za-z0-9]+(?:[ ._\-'’&+,()\[\]]+[A-Za-z0-9]+)*[)\]]*)/;
+
+        function renderName(name, isFolder, regex) {
+            let base = name, ext = '';
+            if (!isFolder) {
+                const i = name.lastIndexOf('.');
+                if (i > 0 && name.length - i <= 8 && /^\.[A-Za-z0-9]+$/.test(name.slice(i))) {
+                    base = name.slice(0, i);
+                    ext = name.slice(i);
+                }
+            }
+            const display = base.replace(/_/g, ' ');
+            const html = display.split(LATIN_RUN).map((seg, i) => {
+                if (!seg) return '';
+                const h = highlightText(seg, regex);
+                return i % 2 === 1 ? `<bdi dir="ltr" class="ltr-run">${h}</bdi>` : h;
+            }).join('');
+            const extHtml = ext ? `<bdi dir="ltr" class="ext-run">${escapeHTML(ext)}</bdi>` : '';
+            return html + extHtml;
+        }
+
+        function renderPath(pathArr) {
+            return pathArr.map(seg => `<bdi dir="auto">${escapeHTML(seg.replace(/_/g, ' '))}</bdi>`).join(' <span class="opacity-50">‹</span> ');
+        }
+
+        /* =====================================================
+         * 5. التنسيقات والفرز
+         * ===================================================== */
+        function formatBytes(bytes, decimals = 2) {
+            if (!bytes || bytes === 0) return '0 B';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+            const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        function toMs(ts) { return ts < 1e12 ? ts * 1000 : ts; }
+
+        function formatDate(timestamp) {
+            if (!timestamp) return '—';
+            const d = new Date(toMs(timestamp));
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        function isRecent(item) {
+            if (item.type === 'folder' || !item.modified) return false;
+            return (Date.now() - toMs(item.modified)) < 14 * 86400 * 1000;
+        }
+
+        const naturalCollator = new Intl.Collator(['ar', 'en'], { numeric: true, sensitivity: 'base' });
+
+        function getFileCategory(ext) {
+            if (!ext) return 'other';
+            const e = ext.toLowerCase();
+            if (['mp4', 'mkv', 'avi', 'mov', 'webm', 'flv', 'wmv', 'ts', 'm4v'].includes(e)) return 'video';
+            if (['pdf', 'doc', 'docx', 'epub', 'txt', 'ppt', 'pptx', 'xls', 'xlsx', 'srt', 'csv'].includes(e)) return 'doc';
+            if (['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'm4b'].includes(e)) return 'audio';
+            if (['zip', 'rar', '7z', 'tar', 'gz', 'iso', 'exe', 'msi', 'dmg', 'apk'].includes(e)) return 'archive';
+            return 'other';
+        }
+
+        function getExtensionBadgeStyle(ext) {
+            switch (getFileCategory(ext)) {
+                case 'video':   return 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20';
+                case 'doc':     return 'bg-amber-600/10 text-amber-800 dark:text-amber-300 border-amber-600/20';
+                case 'audio':   return 'bg-emerald-600/10 text-emerald-800 dark:text-emerald-300 border-emerald-600/20';
+                case 'archive': return 'bg-sky-600/10 text-sky-800 dark:text-sky-300 border-sky-600/20';
+                default:        return 'bg-paper-subtle dark:bg-charcoal-subtle text-paper-muted dark:text-charcoal-muted border-paper-border dark:border-charcoal-border';
+            }
+        }
+
+        /* =====================================================
+         * 6. بناء الشجرة (حساب الأحجام + تطبيع الأسماء مسبقاً)
+         * ===================================================== */
+        function enrichTree(nodes, parentPath = []) {
+            let totalSize = 0, folderCount = 0, fileCount = 0;
+
+            const enrichedNodes = nodes.map(node => {
+                const name = String(node.name || '').normalize('NFC');
+                const pathArr = [...parentPath, name];
+                const fullPath = pathArr.join(' / ');
+                const id = `n${++nodeCounter}`;
+                const base = { ...node, name, id, pathArray: pathArr, fullPath, _nn: normalizeArabicText(name), _np: normalizeArabicText(fullPath) };
+
+                if (node.type === 'folder') {
+                    folderCount += 1;
+                    const sub = enrichTree(node.children || [], pathArr);
+                    totalSize += sub.totalSize;
+                    folderCount += sub.folderCount;
+                    fileCount += sub.fileCount;
+                    const folderObj = { ...base, size: sub.totalSize, directCount: (node.children || []).length, children: sub.nodes };
+                    nodeRegistry.set(id, folderObj);
+                    return folderObj;
+                }
+
+                const size = Number(node.size) || 0;
+                const ext = (node.ext || (name.includes('.') ? name.split('.').pop() : '') || 'file').toLowerCase();
+                totalSize += size;
+                fileCount += 1;
+                const fileObj = { ...base, ext, size };
+                nodeRegistry.set(id, fileObj);
+                return fileObj;
+            });
+
+            return { nodes: enrichedNodes, totalSize, folderCount, fileCount };
+        }
+
+        function flattenTree(nodes, acc = []) {
+            for (const node of nodes) {
+                acc.push(node);
+                if (node.type === 'folder' && node.children) flattenTree(node.children, acc);
+            }
+            return acc;
+        }
+
+        function getCurrentDirectoryItems() {
+            let list = state.rootData;
+            for (const segment of state.currentPath) {
+                const found = list.find(i => i.type === 'folder' && i.name === segment);
+                if (!found) return [];
+                list = found.children || [];
+            }
+            return list;
+        }
+
+        function sortItems(items) {
+            return [...items].sort((a, b) => {
+                if (!state.searchQuery && a.type !== b.type) return a.type === 'folder' ? -1 : 1;
+                switch (state.sortBy) {
+                    case 'name_desc': return naturalCollator.compare(b.name, a.name);
+                    case 'size_desc': return b.size - a.size;
+                    case 'size_asc':  return a.size - b.size;
+                    case 'date_desc': return (b.modified || 0) - (a.modified || 0);
+                    case 'date_asc':  return (a.modified || 0) - (b.modified || 0);
+                    default:          return naturalCollator.compare(a.name, b.name);
+                }
+            });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = msg;
+            toast.classList.remove('opacity-0', 'translate-y-2');
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => toast.classList.add('opacity-0', 'translate-y-2'), 2200);
+        }
+
+        /* =====================================================
+         * 7. العرض
+         * ===================================================== */
+        function renderAll() {
+            renderHeaderStats();
+            renderFolderTree();
+            renderBreadcrumbs();
+            renderSortIndicators();
+            renderItems();
+        }
+
+        function renderHeaderStats() {
+            document.getElementById('globalTotalSize').textContent = formatBytes(state.totalStats.size);
+            const foldersText = formatArabicCount(state.totalStats.folders, FOLDER_FORMS);
+            const filesText = formatArabicCount(state.totalStats.files, FILE_FORMS);
+            document.getElementById('globalCounts').textContent = `${foldersText}، ${filesText}`;
+            document.getElementById('treeFolderTotal').textContent = foldersText;
+        }
+
+        function renderSortIndicators() {
+            const set = (id, v) => { document.getElementById(id).textContent = v; };
+            set('sortIndName', state.sortBy === 'name_asc' ? '↑' : state.sortBy === 'name_desc' ? '↓' : '');
+            set('sortIndDate', state.sortBy === 'date_desc' ? '↓' : state.sortBy === 'date_asc' ? '↑' : '');
+            set('sortIndSize', state.sortBy === 'size_desc' ? '↓' : state.sortBy === 'size_asc' ? '↑' : '');
+        }
+
+        function renderFolderTree() {
+            const container = document.getElementById('folderTreeContainer');
+
+            function buildTreeHTML(nodes, depth = 0) {
+                const folders = sortItems(nodes.filter(n => n.type === 'folder'));
+                if (folders.length === 0) return '';
+
+                return folders.map(folder => {
+                    const isExpanded = state.expandedTreePaths.has(folder.fullPath);
+                    const isActive = state.currentPath.join(' / ') === folder.fullPath && !state.searchQuery;
+                    const hasSubFolders = (folder.children || []).some(c => c.type === 'folder');
+                    const paddingRight = 8 + depth * 14;
+
+                    return `
+                        <div>
+                            <div style="padding-right: ${paddingRight}px"
+                                 data-node-id="${folder.id}" role="button" tabindex="0"
+                                 class="tree-node-row flex items-start justify-between gap-2 py-1.5 pl-2 rounded-lg cursor-pointer transition-colors ${isActive ? 'bg-accent/[0.12] text-accent font-semibold' : 'hover:bg-paper-subtle dark:hover:bg-charcoal-subtle text-paper-ink dark:text-charcoal-ink'}">
+                                <div class="flex items-start gap-1.5 min-w-0 flex-1">
+                                    <button type="button" tabindex="-1"
+                                            data-toggle-path="${escapeHTML(folder.fullPath)}"
+                                            aria-label="توسيع المجلد"
+                                            class="tree-toggle-btn mt-0.5 w-4 h-4 flex items-center justify-center rounded hover:bg-black/5 dark:hover:bg-white/10 shrink-0 ${hasSubFolders ? 'visible' : 'invisible'}">
+                                        <svg class="w-3 h-3 transition-transform ${isExpanded ? '-rotate-90' : ''}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                                        </svg>
+                                    </button>
+                                    <svg class="w-4 h-4 mt-0.5 shrink-0 ${isActive ? 'text-accent' : 'text-amber-600 dark:text-amber-500'}" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/>
+                                    </svg>
+                                    <span dir="auto" title="${escapeHTML(folder.name)}" class="text-xs leading-snug full-name">${renderName(folder.name, true, null)}</span>
+                                </div>
+                                <span class="mono-ltr text-[10px] text-paper-muted dark:text-charcoal-muted shrink-0 mt-0.5">${formatBytes(folder.size, 1)}</span>
+                            </div>
+                            ${isExpanded && hasSubFolders ? `<div class="mt-0.5">${buildTreeHTML(folder.children, depth + 1)}</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            const rootActive = state.currentPath.length === 0 && !state.searchQuery;
+            container.innerHTML = `
+                <div id="treeRootBtn" role="button" tabindex="0"
+                     class="flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors ${rootActive ? 'bg-accent/[0.12] text-accent font-semibold' : 'hover:bg-paper-subtle dark:hover:bg-charcoal-subtle'}">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        <span class="text-xs">الرئيسية</span>
+                    </div>
+                    <span class="mono-ltr text-[10px] text-paper-muted dark:text-charcoal-muted">${formatBytes(state.totalStats.size, 1)}</span>
+                </div>
+                <div class="pt-1 border-t border-paper-border/60 dark:border-charcoal-border/60">
+                    ${buildTreeHTML(state.rootData)}
+                </div>
+            `;
+        }
+
+        function renderBreadcrumbs() {
+            const bc = document.getElementById('breadcrumbs');
+            document.getElementById('btnBack').disabled = state.currentPath.length === 0 && !state.searchQuery;
+
+            if (state.searchQuery) {
+                bc.innerHTML = `
+                    <button type="button" id="bcHomeBtn" class="text-accent hover:underline font-medium">الرئيسية</button>
+                    <span class="text-paper-muted">‹</span>
+                    <span class="font-semibold text-paper-ink dark:text-charcoal-ink full-name">نتائج البحث: <bdi dir="auto">${escapeHTML(state.searchQuery)}</bdi></span>
+                `;
+                return;
+            }
+
+            let html = `
+                <button type="button" data-bc-depth="0" class="bc-segment px-1.5 py-0.5 rounded hover:bg-paper-subtle dark:hover:bg-charcoal-subtle ${state.currentPath.length === 0 ? 'font-bold text-paper-ink dark:text-charcoal-ink' : 'text-paper-muted dark:text-charcoal-muted'}">
+                    الرئيسية
+                </button>
+            `;
+
+            state.currentPath.forEach((segment, idx) => {
+                const isLast = idx === state.currentPath.length - 1;
+                html += `
+                    <span class="text-paper-muted/60">‹</span>
+                    <button type="button" data-bc-depth="${idx + 1}"
+                            class="bc-segment px-1.5 py-0.5 rounded text-start full-name hover:bg-paper-subtle dark:hover:bg-charcoal-subtle ${isLast ? 'font-bold text-accent' : 'text-paper-muted dark:text-charcoal-muted'}">
+                        <bdi dir="auto">${renderName(segment, true, null)}</bdi>
+                    </button>
+                `;
+            });
+
+            bc.innerHTML = html;
+        }
+
+        function updateFilterCounts(base) {
+            const counts = { all: base.length, folder: 0, video: 0, doc: 0, audio: 0, archive: 0 };
+            for (const it of base) {
+                if (it.type === 'folder') counts.folder++;
+                else {
+                    const c = getFileCategory(it.ext);
+                    if (counts[c] !== undefined) counts[c]++;
+                }
+            }
+            document.querySelectorAll('.pill-count').forEach(el => {
+                el.textContent = counts[el.dataset.count] ?? '';
+            });
+        }
+
+        function renderItems() {
+            const container = document.getElementById('itemsContainer');
+            const listHeader = document.getElementById('listHeader');
+
+            const base = state.searchQuery
+                ? state.flat.filter(matchesSmartSearch)
+                : getCurrentDirectoryItems();
+
+            updateFilterCounts(base);
+
+            let rawItems = base;
+            if (state.activeFilter !== 'all') {
+                rawItems = base.filter(item => {
+                    if (state.activeFilter === 'folder') return item.type === 'folder';
+                    if (item.type === 'folder') return false;
+                    return getFileCategory(item.ext) === state.activeFilter;
+                });
+            }
+
+            const items = sortItems(rawItems);
+
+            const viewTotalSize = items.reduce((sum, it) => sum + (it.size || 0), 0);
+            document.getElementById('currentViewCount').textContent = formatArabicCount(items.length, ITEM_FORMS);
+            document.getElementById('currentViewSize').textContent = formatBytes(viewTotalSize);
+
+            if (state.viewMode === 'list' && items.length > 0) {
+                listHeader.classList.remove('sm:hidden');
+                listHeader.classList.add('sm:grid');
+            } else {
+                listHeader.classList.add('sm:hidden');
+                listHeader.classList.remove('sm:grid');
+            }
+
+            if (items.length === 0) {
+                container.innerHTML = `
+                    <div class="h-56 flex flex-col items-center justify-center text-center p-6 border border-dashed border-paper-border dark:border-charcoal-border rounded-2xl">
+                        <p class="text-sm font-medium">${state.totalStats.files + state.totalStats.folders === 0 ? 'الفهرس فارغ' : 'لا توجد نتائج مطابقة'}</p>
+                    </div>`;
+                return;
+            }
+
+            const visible = items.slice(0, state.limit);
+            const regex = buildHighlightRegex(state.searchQuery);
+            const maxFolderSize = Math.max(...visible.filter(i => i.type === 'folder').map(i => i.size), 1);
+
+            const rows = state.viewMode === 'list'
+                ? `<div class="bg-paper-surface dark:bg-charcoal-surface border border-paper-border dark:border-charcoal-border rounded-xl divide-y divide-paper-border dark:divide-charcoal-border overflow-hidden">
+                        ${visible.map(it => renderListRow(it, maxFolderSize, regex)).join('')}
+                   </div>`
+                : `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        ${visible.map(it => renderGridCard(it, maxFolderSize, regex)).join('')}
+                   </div>`;
+
+            const more = items.length > visible.length
+                ? `<div class="pt-4 text-center">
+                        <button type="button" data-showmore class="px-4 py-2 text-xs font-semibold rounded-lg border border-paper-border dark:border-charcoal-border hover:border-accent transition-colors">
+                            عرض المزيد (${formatArabicCount(items.length - visible.length, ITEM_FORMS)} متبقية)
+                        </button>
+                   </div>`
+                : '';
+
+            container.innerHTML = rows + more;
+        }
+
+        const COPY_ICON = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>`;
+        const NEW_BADGE = `<span class="inline-block align-middle ms-1.5 px-1.5 py-px rounded text-[10px] font-semibold bg-accent/[0.15] text-accent">جديد</span>`;
+
+        function renderListRow(item, maxFolderSize, regex) {
+            const isFolder = item.type === 'folder';
+            const sizePercent = isFolder ? Math.max(4, Math.round((item.size / maxFolderSize) * 100)) : 0;
+            const nameHtml = renderName(item.name, isFolder, regex);
+            const countLabel = isFolder ? formatArabicCount(item.directCount, ITEM_FORMS) : '';
+            const interactive = isFolder ? 'role="button" tabindex="0"' : '';
+
+            return `
+                <div data-node-id="${item.id}" ${interactive}
+                     class="item-entry group grid grid-cols-12 gap-2 sm:gap-3 items-start sm:items-center px-3.5 sm:px-5 py-3.5 transition-colors ${isFolder ? 'cursor-pointer hover:bg-paper-subtle/80 dark:hover:bg-charcoal-subtle/70 active:bg-paper-subtle focus:outline-none focus-visible:bg-paper-subtle dark:focus-visible:bg-charcoal-subtle' : 'hover:bg-paper-subtle/40 dark:hover:bg-charcoal-subtle/30'}">
+
+                    <div class="col-span-8 sm:col-span-6 flex items-start gap-3 min-w-0">
+                        ${isFolder ? `
+                            <div class="w-9 h-9 mt-0.5 rounded-lg bg-amber-500/[0.12] dark:bg-amber-500/[0.15] text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
+                            </div>
+                        ` : `
+                            <div class="w-9 h-9 mt-0.5 rounded-lg flex items-center justify-center shrink-0 border text-[10px] font-bold uppercase mono-ltr ${getExtensionBadgeStyle(item.ext)}">
+                                ${escapeHTML((item.ext || 'FILE').slice(0, 4))}
+                            </div>
+                        `}
+                        <div class="min-w-0 flex-1">
+                            <div dir="auto" title="${escapeHTML(item.name)}" class="text-sm leading-relaxed full-name ${isFolder ? 'font-semibold group-hover:text-accent transition-colors' : ''}">${nameHtml}${isRecent(item) ? NEW_BADGE : ''}</div>
+                            ${state.searchQuery ? `
+                                <div class="text-[11px] text-paper-muted dark:text-charcoal-muted full-name path-line mt-0.5">${renderPath(item.pathArray.slice(0, -1)) || 'الرئيسية'}</div>
+                            ` : isFolder ? `
+                                <div class="mt-1.5 flex items-center gap-2 max-w-[220px]">
+                                    <div class="flex-1 h-1 bg-paper-subtle dark:bg-charcoal-subtle rounded-full overflow-hidden">
+                                        <div class="h-full bg-accent/80 rounded-full" style="width: ${sizePercent}%"></div>
+                                    </div>
+                                    <span class="sm:hidden text-[11px] text-paper-muted dark:text-charcoal-muted">${countLabel}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <div class="hidden sm:flex col-span-2 items-center text-xs text-paper-muted dark:text-charcoal-muted">
+                        ${isFolder
+                            ? `<span class="inline-flex items-center px-2 py-0.5 rounded-md bg-paper-subtle dark:bg-charcoal-subtle font-medium text-paper-ink dark:text-charcoal-ink text-[11px]">${countLabel}</span>`
+                            : `<span class="mono-ltr uppercase text-[11px]">${escapeHTML(item.ext)}</span>`}
+                    </div>
+
+                    <div class="hidden sm:block col-span-2 mono-ltr text-xs text-paper-muted dark:text-charcoal-muted">${formatDate(item.modified)}</div>
+
+                    <div class="col-span-4 sm:col-span-2 flex items-center justify-end gap-1.5 pt-1 sm:pt-0">
+                        <span class="mono-ltr text-xs sm:text-[13px] font-semibold ${isFolder ? 'text-accent' : ''}">${formatBytes(item.size)}</span>
+                        ${isFolder
+                            ? `<svg class="w-4 h-4 text-paper-muted group-hover:text-accent transition-transform group-hover:-translate-x-0.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>`
+                            : `<button type="button" data-copy="${item.id}" aria-label="نسخ الاسم" title="نسخ الاسم" class="p-1 rounded-md text-paper-muted hover:text-accent shrink-0">${COPY_ICON}</button>`}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderGridCard(item, maxFolderSize, regex) {
+            const isFolder = item.type === 'folder';
+            const sizePercent = isFolder ? Math.max(5, Math.round((item.size / maxFolderSize) * 100)) : 0;
+            const nameHtml = renderName(item.name, isFolder, regex);
+            const countLabel = isFolder ? formatArabicCount(item.directCount, ITEM_FORMS) : '';
+            const interactive = isFolder ? 'role="button" tabindex="0"' : '';
+
+            return `
+                <div data-node-id="${item.id}" ${interactive}
+                     class="item-entry group flex flex-col justify-between p-4 rounded-xl border transition-all bg-paper-surface dark:bg-charcoal-surface border-paper-border dark:border-charcoal-border ${isFolder ? 'cursor-pointer hover:border-accent focus:outline-none focus-visible:border-accent' : ''}">
+                    <div>
+                        <div class="flex items-center justify-between gap-2">
+                            ${isFolder ? `
+                                <div class="w-10 h-10 rounded-xl bg-amber-500/[0.12] text-amber-700 dark:text-amber-400 flex items-center justify-center border border-amber-500/20">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
+                                </div>
+                            ` : `
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center border text-xs font-bold uppercase mono-ltr ${getExtensionBadgeStyle(item.ext)}">
+                                    ${escapeHTML((item.ext || 'FILE').slice(0, 4))}
+                                </div>
+                            `}
+                            ${isFolder
+                                ? `<svg class="w-4 h-4 text-paper-muted group-hover:text-accent transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>`
+                                : `<button type="button" data-copy="${item.id}" aria-label="نسخ الاسم" title="نسخ الاسم" class="p-1 rounded-md text-paper-muted hover:text-accent">${COPY_ICON}</button>`}
+                        </div>
+
+                        <h3 dir="auto" title="${escapeHTML(item.name)}" class="mt-3 text-sm font-semibold leading-relaxed full-name group-hover:text-accent transition-colors">${nameHtml}${isRecent(item) ? NEW_BADGE : ''}</h3>
+
+                        ${state.searchQuery ? `<p class="mt-1 text-[11px] text-paper-muted dark:text-charcoal-muted full-name path-line">${renderPath(item.pathArray.slice(0, -1)) || 'الرئيسية'}</p>` : ''}
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-paper-border/70 dark:border-charcoal-border/70">
+                        ${isFolder ? `
+                            <div class="w-full h-1.5 bg-paper-subtle dark:bg-charcoal-subtle rounded-full overflow-hidden mb-2">
+                                <div class="h-full bg-accent rounded-full" style="width: ${sizePercent}%"></div>
+                            </div>` : ''}
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-paper-muted dark:text-charcoal-muted ${isFolder ? '' : 'mono-ltr'}">${isFolder ? countLabel : formatDate(item.modified)}</span>
+                            <span class="mono-ltr font-bold ${isFolder ? 'text-accent' : ''}">${formatBytes(item.size)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        /* =====================================================
+         * 8. التنقل (مع دعم الرابط #/مسار وزر الرجوع في المتصفح)
+         * ===================================================== */
+        function parseHash() {
+            const h = location.hash;
+            if (!h.startsWith('#/')) return [];
+            return h.slice(2).split('/').filter(Boolean).map(s => {
+                try { return decodeURIComponent(s); } catch (e) { return s; }
+            });
+        }
+
+        function buildHash(arr) {
+            return arr.length ? '#/' + arr.map(encodeURIComponent).join('/') : '#/';
+        }
+
+        function pathExists(arr) {
+            let list = state.rootData;
+            for (const seg of arr) {
+                const f = list.find(i => i.type === 'folder' && i.name === seg);
+                if (!f) return false;
+                list = f.children || [];
+            }
+            return true;
+        }
+
+        function resetSearchUI() {
+            state.searchQuery = "";
+            state.searchTokens = [];
+            document.getElementById('searchInput').value = "";
+            document.getElementById('clearSearchBtn').classList.add('hidden');
+        }
+
+        function applyPath(pathArray) {
+            state.currentPath = pathExists(pathArray) ? [...pathArray] : [];
+            resetSearchUI();
+            state.limit = RENDER_STEP;
+            for (let i = 1; i <= state.currentPath.length; i++) {
+                state.expandedTreePaths.add(state.currentPath.slice(0, i).join(' / '));
+            }
+            renderAll();
+            document.getElementById('itemsContainer').scrollTop = 0;
+            window.scrollTo({ top: 0 });
+        }
+
+        function navigateToPath(pathArray) {
+            const target = buildHash(pathArray);
+            if (buildHash(parseHash()) !== target) {
+                history.pushState(null, '', target);
+            }
+            applyPath(pathArray);
+        }
+
+        function clearSearch() {
+            resetSearchUI();
+            state.limit = RENDER_STEP;
+            renderAll();
+        }
+
+        function toggleHeaderSort(column) {
+            if (column === 'name') state.sortBy = state.sortBy === 'name_asc' ? 'name_desc' : 'name_asc';
+            else if (column === 'size') state.sortBy = state.sortBy === 'size_desc' ? 'size_asc' : 'size_desc';
+            else if (column === 'date') state.sortBy = state.sortBy === 'date_desc' ? 'date_asc' : 'date_desc';
+            document.getElementById('sortSelect').value = state.sortBy;
+            state.limit = RENDER_STEP;
+            renderSortIndicators();
+            renderItems();
+        }
+
+        function loadCatalogData(rawJson) {
+            nodeRegistry = new Map();
+            nodeCounter = 0;
+            const enriched = enrichTree(rawJson);
+            state.rootData = enriched.nodes;
+            state.flat = flattenTree(enriched.nodes);
+            state.totalStats = { size: enriched.totalSize, folders: enriched.folderCount, files: enriched.fileCount };
+            state.expandedTreePaths = new Set();
+            applyPath(parseHash());
+        }
+
+        function showLoadError(message, hint) {
+            document.getElementById('itemsContainer').innerHTML = `
+                <div class="h-56 flex flex-col items-center justify-center text-center p-6 border border-dashed border-paper-border dark:border-charcoal-border rounded-2xl gap-2">
+                    <p class="text-sm font-semibold">${escapeHTML(message)}</p>
+                    ${hint ? `<p class="text-xs text-paper-muted dark:text-charcoal-muted max-w-md leading-relaxed">${escapeHTML(hint)}</p>` : ''}
+                </div>`;
+        }
+
+        /* =====================================================
+         * 9. خلفية الموقع
+         *    - خلفية عامة للجميع من site.json  (background / overlay / blur)
+         *    - أو صورة يختارها الزائر لنفسه (تُحفظ في متصفحه)
+         * ===================================================== */
+        const siteConfig = { background: "", overlay: 0.75, blur: 6 };
+        const bgState = { mode: 'default', overlay: null, blur: null };   // mode: default | custom | none
+
+        function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+        function lsSet(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+        function lsDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
+
+        function loadBgPrefs() {
+            try {
+                const saved = JSON.parse(lsGet('site_bg') || '{}');
+                if (['default', 'custom', 'none'].includes(saved.mode)) bgState.mode = saved.mode;
+                if (typeof saved.overlay === 'number') bgState.overlay = saved.overlay;
+                if (typeof saved.blur === 'number') bgState.blur = saved.blur;
+            } catch (e) {}
+            if (bgState.mode === 'custom' && !lsGet('site_bg_img')) bgState.mode = 'default';
+        }
+
+        function saveBgPrefs() {
+            lsSet('site_bg', JSON.stringify(bgState));
+        }
+
+        function effectiveOverlay() { return bgState.overlay ?? siteConfig.overlay; }
+        function effectiveBlur() { return bgState.blur ?? siteConfig.blur; }
+
+        function applyBackground() {
+            let url = '';
+            if (bgState.mode === 'custom') url = lsGet('site_bg_img') || '';
+            else if (bgState.mode === 'default') url = siteConfig.background ? encodeURI(siteConfig.background) : '';
+
+            const bg = document.getElementById('siteBg');
+            if (url) {
+                bg.style.backgroundImage = `url("${url.replace(/"/g, '%22')}")`;
+                document.body.classList.add('has-bg');
+            } else {
+                bg.style.backgroundImage = '';
+                document.body.classList.remove('has-bg');
+            }
+            document.documentElement.style.setProperty('--bg-overlay', effectiveOverlay());
+            document.documentElement.style.setProperty('--bg-blur', effectiveBlur() + 'px');
+            syncBgModal();
+        }
+
+        function syncBgModal() {
+            const o = document.getElementById('bgOverlay');
+            const b = document.getElementById('bgBlur');
+            o.value = effectiveOverlay();
+            b.value = effectiveBlur();
+            document.getElementById('bgOverlayVal').textContent = Math.round(effectiveOverlay() * 100) + '%';
+            document.getElementById('bgBlurVal').textContent = effectiveBlur() + 'px';
+            document.getElementById('bgDefault').classList.toggle('hidden', !siteConfig.background);
+        }
+
+        /* تصغير الصورة قبل حفظها حتى لا تتجاوز سعة التخزين المحلي */
+        function downscaleImage(file, maxSide = 1920, quality = 0.82) {
+            return new Promise((resolve, reject) => {
+                const objUrl = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = () => {
+                    const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.round(img.width * scale);
+                    canvas.height = Math.round(img.height * scale);
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                    URL.revokeObjectURL(objUrl);
+                    resolve(canvas.toDataURL('image/jpeg', quality));
+                };
+                img.onerror = () => { URL.revokeObjectURL(objUrl); reject(new Error('bad image')); };
+                img.src = objUrl;
+            });
+        }
+
+        function openBgModal() {
+            syncBgModal();
+            const m = document.getElementById('bgModal');
+            m.classList.remove('hidden');
+            m.classList.add('flex');
+        }
+        function closeBgModal() {
+            const m = document.getElementById('bgModal');
+            m.classList.add('hidden');
+            m.classList.remove('flex');
+        }
+
+        async function loadSiteConfig() {
+            try {
+                const res = await fetch('./site.json', { cache: 'no-store' });
+                if (res.ok) {
+                    const cfg = await res.json();
+                    if (typeof cfg.background === 'string') siteConfig.background = cfg.background.trim();
+                    if (typeof cfg.overlay === 'number') siteConfig.overlay = Math.min(0.95, Math.max(0.2, cfg.overlay));
+                    if (typeof cfg.blur === 'number') siteConfig.blur = Math.min(16, Math.max(0, cfg.blur));
+                }
+            } catch (e) { /* لا يوجد ملف إعدادات: لا مشكلة */ }
+        }
+
+        /* =====================================================
+         * 10. التهيئة والأحداث
+         * ===================================================== */
+        document.addEventListener('DOMContentLoaded', async () => {
+
+            // ---- الخلفية ----
+            loadBgPrefs();
+            await loadSiteConfig();
+            applyBackground();
+
+            // ---- الفهرس ----
+            try {
+                const res = await fetch('./catalog.json', { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                if (!Array.isArray(data)) throw new Error('catalog.json must be an array');
+                loadCatalogData(data);
+            } catch (e) {
+                renderHeaderStats();
+                renderFolderTree();
+                renderBreadcrumbs();
+                showLoadError(
+                    'تعذّر تحميل الفهرس',
+                    location.protocol === 'file:'
+                        ? 'الصفحة مفتوحة كملف محلي. شغّل خادماً محلياً (python -m http.server) ثم افتحها من المتصفح.'
+                        : 'تأكد من وجود ملف catalog.json بجانب index.html وأنه بصيغة صحيحة.'
+                );
+            }
+
+            // ---- أزرار الفرز والعرض ----
+            document.getElementById('sortSelect').addEventListener('change', (e) => {
+                state.sortBy = e.target.value;
+                state.limit = RENDER_STEP;
+                renderSortIndicators();
+                renderFolderTree();
+                renderItems();
+            });
+
+            const btnList = document.getElementById('btnViewList');
+            const btnGrid = document.getElementById('btnViewGrid');
+            const setView = (mode) => {
+                state.viewMode = mode;
+                const on = ['bg-paper-surface', 'dark:bg-charcoal-surface', 'text-accent'];
+                const off = ['text-paper-muted', 'dark:text-charcoal-muted'];
+                const [a, b] = mode === 'list' ? [btnList, btnGrid] : [btnGrid, btnList];
+                a.classList.add(...on); a.classList.remove(...off);
+                b.classList.remove(...on); b.classList.add(...off);
+                renderItems();
+            };
+            btnList.addEventListener('click', () => setView('list'));
+            btnGrid.addEventListener('click', () => setView('grid'));
+
+            // ---- المظهر (الليلي افتراضي، ويُحفظ اختيار الزائر) ----
+            document.getElementById('themeToggle').addEventListener('click', () => {
+                const isDark = document.documentElement.classList.toggle('dark');
+                lsSet('theme', isDark ? 'dark' : 'light');
+            });
+
+            // ---- البحث مع تأخير بسيط ----
+            const searchInput = document.getElementById('searchInput');
+            const clearSearchBtn = document.getElementById('clearSearchBtn');
+            let searchTimer;
+            searchInput.addEventListener('input', (e) => {
+                const value = e.target.value;
+                clearSearchBtn.classList.toggle('hidden', value.trim().length === 0);
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(() => {
+                    state.searchQuery = value.trim();
+                    state.searchTokens = normalizeArabicText(value).split(" ").filter(Boolean);
+                    if (state.searchTokens.length === 0) state.searchQuery = "";
+                    state.limit = RENDER_STEP;
+                    renderBreadcrumbs();
+                    renderFolderTree();
+                    renderItems();
+                }, 150);
+            });
+            clearSearchBtn.addEventListener('click', () => { clearSearch(); searchInput.focus(); });
+
+            // ---- الفلاتر ----
+            document.querySelectorAll('.filter-pill').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-pill').forEach(b => {
+                        b.classList.remove('active', 'bg-paper-ink', 'text-paper-surface', 'border-paper-ink', 'dark:bg-charcoal-ink', 'dark:text-charcoal-bg', 'dark:border-charcoal-ink');
+                        b.classList.add('bg-paper-bg', 'dark:bg-charcoal-bg', 'text-paper-muted', 'dark:text-charcoal-muted', 'border-paper-border', 'dark:border-charcoal-border');
+                    });
+                    btn.classList.add('active', 'bg-paper-ink', 'text-paper-surface', 'border-paper-ink', 'dark:bg-charcoal-ink', 'dark:text-charcoal-bg', 'dark:border-charcoal-ink');
+                    btn.classList.remove('bg-paper-bg', 'dark:bg-charcoal-bg', 'text-paper-muted', 'dark:text-charcoal-muted', 'border-paper-border', 'dark:border-charcoal-border');
+                    state.activeFilter = btn.dataset.filter;
+                    state.limit = RENDER_STEP;
+                    renderItems();
+                });
+            });
+
+            // ---- القائمة الرئيسية: فتح مجلد / عرض المزيد / نسخ الاسم ----
+            const itemsContainer = document.getElementById('itemsContainer');
+
+            const copyName = async (id) => {
+                const node = nodeRegistry.get(id);
+                if (!node) return;
+                try {
+                    await navigator.clipboard.writeText(node.name);
+                } catch (err) {
+                    const ta = document.createElement('textarea');
+                    ta.value = node.name;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    try { document.execCommand('copy'); } catch (e2) {}
+                    ta.remove();
+                }
+                showToast('تم نسخ اسم الملف');
+            };
+
+            itemsContainer.addEventListener('click', (e) => {
+                const copyBtn = e.target.closest('[data-copy]');
+                if (copyBtn) { e.stopPropagation(); copyName(copyBtn.dataset.copy); return; }
+
+                if (e.target.closest('[data-showmore]')) {
+                    state.limit += RENDER_STEP;
+                    renderItems();
+                    return;
+                }
+
+                const entryEl = e.target.closest('.item-entry');
+                if (!entryEl) return;
+                const node = nodeRegistry.get(entryEl.dataset.nodeId);
+                if (node && node.type === 'folder') navigateToPath(node.pathArray);
+            });
+
+            // دعم لوحة المفاتيح (Enter / Space) على الصفوف القابلة للضغط
+            const keyActivate = (e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                const el = e.target.closest('[role="button"]');
+                if (!el || e.target.closest('button')) return;
+                e.preventDefault();
+                el.click();
+            };
+            itemsContainer.addEventListener('keydown', keyActivate);
+
+            // ---- شجرة المجلدات ----
+            const tree = document.getElementById('folderTreeContainer');
+            tree.addEventListener('keydown', keyActivate);
+            tree.addEventListener('click', (e) => {
+                if (e.target.closest('#treeRootBtn')) { navigateToPath([]); return; }
+                const toggleBtn = e.target.closest('.tree-toggle-btn');
+                if (toggleBtn) {
+                    e.stopPropagation();
+                    const p = toggleBtn.dataset.togglePath;
+                    if (state.expandedTreePaths.has(p)) state.expandedTreePaths.delete(p);
+                    else state.expandedTreePaths.add(p);
+                    renderFolderTree();
+                    return;
+                }
+                const row = e.target.closest('.tree-node-row');
+                if (row) {
+                    const node = nodeRegistry.get(row.dataset.nodeId);
+                    if (node) navigateToPath(node.pathArray);
+                }
+            });
+
+            // ---- شريط المسار وزر الرجوع ----
+            document.getElementById('breadcrumbs').addEventListener('click', (e) => {
+                if (e.target.closest('#bcHomeBtn')) { clearSearch(); return; }
+                const segBtn = e.target.closest('.bc-segment');
+                if (segBtn) navigateToPath(state.currentPath.slice(0, Number(segBtn.dataset.bcDepth)));
+            });
+
+            document.getElementById('btnBack').addEventListener('click', () => {
+                if (state.searchQuery) clearSearch();
+                else if (state.currentPath.length > 0) navigateToPath(state.currentPath.slice(0, -1));
+            });
+
+            // زر الرجوع/الأمام في المتصفح وتعديل الرابط يدوياً
+            window.addEventListener('popstate', () => applyPath(parseHash()));
+
+            // ---- نافذة الخلفية ----
+            document.getElementById('bgBtn').addEventListener('click', openBgModal);
+            document.getElementById('bgClose').addEventListener('click', closeBgModal);
+            document.getElementById('bgModal').addEventListener('click', (e) => {
+                if (e.target.id === 'bgModal') closeBgModal();
+            });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeBgModal(); });
+
+            document.getElementById('bgFileInput').addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                e.target.value = '';
+                if (!file) return;
+                try {
+                    const dataUrl = await downscaleImage(file);
+                    if (!lsSet('site_bg_img', dataUrl)) { showToast('الصورة كبيرة جداً للحفظ في المتصفح'); return; }
+                    bgState.mode = 'custom';
+                    saveBgPrefs();
+                    applyBackground();
+                    showToast('تم تطبيق الخلفية');
+                } catch (err) {
+                    showToast('تعذّر قراءة الصورة');
+                }
+            });
+            document.getElementById('bgNone').addEventListener('click', () => {
+                bgState.mode = 'none'; saveBgPrefs(); applyBackground();
+            });
+            document.getElementById('bgDefault').addEventListener('click', () => {
+                bgState.mode = 'default'; lsDel('site_bg_img'); saveBgPrefs(); applyBackground();
+            });
+            document.getElementById('bgOverlay').addEventListener('input', (e) => {
+                bgState.overlay = Number(e.target.value); saveBgPrefs(); applyBackground();
+            });
+            document.getElementById('bgBlur').addEventListener('input', (e) => {
+                bgState.blur = Number(e.target.value); saveBgPrefs(); applyBackground();
+            });
+        });
+    </script>
+</body>
+</html>
