@@ -1,5 +1,6 @@
 {
   "background": "arli.jfif",
   "overlay": 0.75,
-  "blur": 6
+  "blur": 6,
+  "version": "1"
 }
