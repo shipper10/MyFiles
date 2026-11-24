@@ -344,24 +344,34 @@
          *    - الشرطة السفلية تُعرض كمسافة لتحسين القراءة والالتفاف
          * ===================================================== */
         const LATIN_RUN = /([A-Za-z0-9]+(?:[ ._\-'’&+,()\[\]]+[A-Za-z0-9]+)*[)\]]*)/;
+        const AR_RUN = /([\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF][\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF0-9 ()\-.،:]*)/;
 
+        /* اتجاه الاسم يتبع أول حرف فيه: إنجليزي => يُقرأ من اليسار لليمين، عربي => من اليمين لليسار.
+           المحاذاة تبقى دائماً إلى اليمين لتتوافق مع شجرة المجلدات. */
+        function nameDir(name) {
+            const m = String(name).match(/[A-Za-z\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/);
+            return m && /[A-Za-z]/.test(m[0]) ? 'ltr' : 'rtl';
+        }
+
+        /* الامتداد لا يظهر داخل الاسم (يظهر في الشارة وعمود النوع)، فلا يلتصق بالنص أو ينزل وحده في سطر.
+           المقاطع المعاكسة لاتجاه الاسم تُعزل داخل <bdi> حتى لا تختلط الأرقام والعلامات. */
         function renderName(name, isFolder, regex) {
-            let base = name, ext = '';
+            let base = name;
             if (!isFolder) {
                 const i = name.lastIndexOf('.');
                 if (i > 0 && name.length - i <= 8 && /^\.[A-Za-z0-9]+$/.test(name.slice(i))) {
                     base = name.slice(0, i);
-                    ext = name.slice(i);
                 }
             }
+            const dir = nameDir(base);
+            const splitter = dir === 'rtl' ? LATIN_RUN : AR_RUN;
+            const innerDir = dir === 'rtl' ? 'ltr' : 'rtl';
             const display = base.replace(/_/g, ' ');
-            const html = display.split(LATIN_RUN).map((seg, i) => {
+            return display.split(splitter).map((seg, i) => {
                 if (!seg) return '';
                 const h = highlightText(seg, regex);
-                return i % 2 === 1 ? `<bdi dir="ltr" class="ltr-run">${h}</bdi>` : h;
+                return i % 2 === 1 ? `<bdi dir="${innerDir}" class="${innerDir}-run">${h}</bdi>` : h;
             }).join('');
-            const extHtml = ext ? `<bdi dir="ltr" class="ext-run">${escapeHTML(ext)}</bdi>` : '';
-            return html + extHtml;
         }
 
         function renderPath(pathArr) {
@@ -547,7 +557,7 @@
                                     <svg class="w-4 h-4 mt-0.5 shrink-0 ${isActive ? 'text-accent' : 'text-amber-600 dark:text-amber-500'}" fill="currentColor" viewBox="0 0 20 20">
                                         <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/>
                                     </svg>
-                                    <span title="${escapeHTML(folder.name)}" class="text-xs leading-snug full-name flex-1 min-w-0">${renderName(folder.name, true, null)}</span>
+                                    <span dir="${nameDir(folder.name)}" title="${escapeHTML(folder.name)}" class="text-xs leading-snug full-name flex-1 min-w-0">${renderName(folder.name, true, null)}</span>
                                 </div>
                                 <span class="mono-ltr text-[10px] text-paper-muted dark:text-charcoal-muted shrink-0 mt-0.5">${formatBytes(folder.size, 1)}</span>
                             </div>
@@ -600,7 +610,7 @@
                     <span class="text-paper-muted/60">‹</span>
                     <button type="button" data-bc-depth="${idx + 1}"
                             class="bc-segment px-1.5 py-0.5 rounded text-start full-name hover:bg-paper-subtle dark:hover:bg-charcoal-subtle ${isLast ? 'font-bold text-accent' : 'text-paper-muted dark:text-charcoal-muted'}">
-                        <bdi dir="auto">${renderName(segment, true, null)}</bdi>
+                        <bdi dir="${nameDir(segment)}">${renderName(segment, true, null)}</bdi>
                     </button>
                 `;
             });
@@ -711,7 +721,7 @@
                             </div>
                         `}
                         <div class="min-w-0 flex-1">
-                            <div title="${escapeHTML(item.name)}" class="text-sm leading-relaxed full-name ${isFolder ? 'font-semibold group-hover:text-accent transition-colors' : ''}">${nameHtml}${isRecent(item) ? NEW_BADGE : ''}</div>
+                            <div dir="${nameDir(item.name)}" title="${escapeHTML(item.name)}" class="text-sm leading-relaxed full-name ${isFolder ? 'font-semibold group-hover:text-accent transition-colors' : ''}">${nameHtml}${isRecent(item) ? NEW_BADGE : ''}</div>
                             ${state.searchQuery ? `
                                 <div class="text-[11px] text-paper-muted dark:text-charcoal-muted full-name path-line mt-0.5">${renderPath(item.pathArray.slice(0, -1)) || 'الرئيسية'}</div>
                             ` : isFolder ? `
@@ -769,7 +779,7 @@
                                 : `<button type="button" data-copy="${item.id}" aria-label="نسخ الاسم" title="نسخ الاسم" class="p-1 rounded-md text-paper-muted hover:text-accent">${COPY_ICON}</button>`}
                         </div>
 
-                        <h3 title="${escapeHTML(item.name)}" class="mt-3 text-sm font-semibold leading-relaxed full-name group-hover:text-accent transition-colors">${nameHtml}${isRecent(item) ? NEW_BADGE : ''}</h3>
+                        <h3 dir="${nameDir(item.name)}" title="${escapeHTML(item.name)}" class="mt-3 text-sm font-semibold leading-relaxed full-name group-hover:text-accent transition-colors">${nameHtml}${isRecent(item) ? NEW_BADGE : ''}</h3>
 
                         ${state.searchQuery ? `<p class="mt-1 text-[11px] text-paper-muted dark:text-charcoal-muted full-name path-line">${renderPath(item.pathArray.slice(0, -1)) || 'الرئيسية'}</p>` : ''}
                     </div>
