@@ -44,7 +44,7 @@ python scan_catalog.py "D:\Library" --exclude "*.bak" "Backup*"
 
 ```bash
 npm install
-npm run build
+npm run build:css
 ```
 
 ## النشر
