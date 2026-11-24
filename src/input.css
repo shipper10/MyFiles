@@ -28,10 +28,10 @@
    - اسم الملف: اتجاه تلقائي حسب أول حرف قوي، وكل مقطع لاتيني/رقمي داخله معزول LTR.
    - الامتداد يُعرض في عنصر LTR مستقل حتى لا ينتقل لجهة أخرى. */
 .mono-ltr { font-family: 'JetBrains Mono', monospace; direction: ltr; unicode-bidi: isolate; }
-.full-name { overflow-wrap: anywhere; word-break: break-word; white-space: normal; unicode-bidi: plaintext; text-align: start; }
+.full-name { overflow-wrap: anywhere; word-break: break-word; white-space: normal; direction: rtl; unicode-bidi: isolate; text-align: right; }
 .ltr-run { direction: ltr; unicode-bidi: isolate; display: inline; }
 .ext-run { direction: ltr; unicode-bidi: isolate; display: inline; opacity: .6; font-family: 'JetBrains Mono', monospace; font-size: .85em; }
-.path-line { unicode-bidi: plaintext; text-align: start; }
+.path-line { direction: rtl; unicode-bidi: isolate; text-align: right; }
 
 mark.search-hl { background-color: rgba(200,75,49,.18); color: inherit; border-radius: 3px; padding: 0 2px; font-weight: 600; }
 .dark mark.search-hl { background-color: rgba(200,75,49,.35); }
